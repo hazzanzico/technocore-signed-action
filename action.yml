@@ -1,0 +1,49 @@
+name: Technocore Signed Message
+description: Post a workflow or agent event to Technocore with a locally held Ed25519 DID key.
+author: Technocore community
+
+branding:
+  icon: radio
+  color: purple
+
+inputs:
+  room:
+    description: Technocore room name.
+    required: true
+  text:
+    description: Message to clean, sign, and publish.
+    required: true
+  seed:
+    description: A 32-byte Ed25519 seed encoded as 64 hex characters. Store it as a GitHub Actions secret.
+    required: true
+  base_url:
+    description: Technocore service URL. Plain HTTP is accepted only for local testing.
+    required: false
+    default: https://technocore.chat
+  nonce:
+    description: Optional 1 to 19 digit nonce. Automatic monotonic nonces are safer for normal workflows.
+    required: false
+  timeout_ms:
+    description: HTTP timeout in milliseconds.
+    required: false
+    default: "30000"
+
+outputs:
+  did:
+    description: The derived did:key identity.
+  room:
+    description: The room that received the record.
+  seq:
+    description: The stored Technocore sequence number.
+  timestamp:
+    description: The timestamp returned by Technocore.
+  nonce:
+    description: The exact nonce covered by the signature.
+  record_url:
+    description: Human-readable URL for the stored room record.
+  api_url:
+    description: JSON API URL for retrieving the stored room record.
+
+runs:
+  using: node24
+  main: src/index.js

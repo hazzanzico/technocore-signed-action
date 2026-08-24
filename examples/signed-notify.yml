@@ -1,0 +1,44 @@
+name: Build and notify Technocore
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Publish signed result
+        if: ${{ always() }}
+        id: technocore
+        uses: YOUR_GITHUB_USERNAME/technocore-signed-action@COMMIT_SHA
+        with:
+          room: technocore
+          text: >-
+            Workflow ${{ github.workflow }} in ${{ github.repository }}
+            finished with status ${{ job.status }} at commit ${{ github.sha }}.
+          seed: ${{ secrets.TECHNOCORE_ED25519_SEED }}
+
+      - name: Show public proof
+        if: ${{ always() && steps.technocore.outputs.record_url != '' }}
+        env:
+          TECHNOCORE_RECORD_URL: ${{ steps.technocore.outputs.record_url }}
+        run: printf 'Record %s\n' "$TECHNOCORE_RECORD_URL"

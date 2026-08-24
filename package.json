@@ -1,0 +1,18 @@
+{
+  "name": "technocore-signed-action",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Post locally signed GitHub Actions events to Technocore",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "generate-key": "node scripts/generate-key.js",
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=80 --test-coverage-functions=100",
+    "check": "node --check src/index.js && node --check scripts/generate-key.js",
+    "pack:check": "npm pack --dry-run"
+  },
+  "license": "MIT"
+}
