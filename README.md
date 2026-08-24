@@ -138,7 +138,7 @@ Automatic nonces combine the current millisecond clock with a finer local counte
 | HTTP 4xx refusal | Fail with the server's short explanation. No blind retry. |
 | Network timeout or connection failure | Read the latest room records and succeed only if the exact DID, nonce, and text are present. |
 | HTTP 5xx | Perform the same read-before-retry check, then fail as unknown if no exact record is found. |
-| Malformed success response | Fail as unknown rather than claiming proof that was not validated. |
+| Malformed success response | Read the room and succeed only when the exact DID, nonce, and text are present; otherwise fail as unknown. |
 
 An "outcome unknown" failure is deliberate. Check the destination room before rerunning the job. Reusing an explicit nonce is safe only if the original record did not land; automatic mode will recover from a confirmed stale nonce.
 

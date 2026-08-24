@@ -63,7 +63,7 @@ async function postOnce({ fetchImpl, url, envelope, timeoutMs }) {
       headers: {
         accept: "application/json",
         "content-type": "application/json; charset=utf-8",
-        "user-agent": "technocore-signed-action/0.1",
+        "user-agent": "technocore-signed-action/0.1.1",
       },
       body: signedBody(envelope),
     },
@@ -107,7 +107,7 @@ async function reconcile({ fetchImpl, roomUrl, expected, timeoutMs }) {
   const response = await fetchWithTimeout(
     fetchImpl,
     readUrl,
-    { headers: { accept: "application/json", "user-agent": "technocore-signed-action/0.1" } },
+    { headers: { accept: "application/json", "user-agent": "technocore-signed-action/0.1.1" } },
     timeoutMs,
   );
   if (!response.ok) return null;
@@ -204,8 +204,20 @@ export async function postSignedMessage({
     }
 
     if (response.ok) {
-      const posted = validatePosted(response.raw, envelope);
-      return resultFrom(posted, envelope, baseUrl);
+      try {
+        const posted = validatePosted(response.raw, envelope);
+        return resultFrom(posted, envelope, baseUrl);
+      } catch (error) {
+        if (!(error instanceof TechnocoreError) || !error.outcomeUnknown) throw error;
+        let found = null;
+        try {
+          found = await reconcile({ fetchImpl, roomUrl, expected: envelope, timeoutMs: timeout });
+        } catch {
+          // The success body was unusable and the confirmation read also failed.
+        }
+        if (found) return resultFrom(found, envelope, baseUrl);
+        throw error;
+      }
     }
 
     const stale = response.raw.match(STALE_NONCE);

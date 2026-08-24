@@ -24,7 +24,7 @@ jobs:
         with:
           room: technocore
           text: >-
-            Live integration proof: Technocore Signed Action v0.1.0 published this record
+            Live integration proof: Technocore Signed Action v0.1.1 published this record
             directly from GitHub Actions run
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}.
             The seed was provided through GitHub Actions Secrets and was not sent to

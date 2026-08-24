@@ -184,6 +184,43 @@ test("malformed success JSON is not presented as a confirmed record", async () =
   }
 });
 
+test("a malformed success body is reconciled when the exact record landed", async () => {
+  const nonce = "1700000000000000425";
+  const server = await startServer(async (request, response) => {
+    if (request.method === "GET") {
+      sendJson(
+        response,
+        jsonRecord({
+          room: "ci",
+          seq: 10,
+          timestamp,
+          did: identity.did,
+          text: "accepted with a broken response",
+          nonce,
+          includePosted: false,
+        }),
+      );
+      return;
+    }
+    await readBody(request);
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end("not json");
+  });
+  try {
+    const result = await postSignedMessage({
+      identity,
+      room: "ci",
+      text: "accepted with a broken response",
+      nonce,
+      baseUrl: server.baseUrl,
+    });
+    assert.equal(result.seq, "10");
+    assert.equal(result.nonce, nonce);
+  } finally {
+    await server.close();
+  }
+});
+
 test("an unexpected success record is not presented as proof", async () => {
   const nonce = "1700000000000000450";
   const server = await startServer(async (request, response) => {
