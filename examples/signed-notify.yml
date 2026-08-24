@@ -29,7 +29,7 @@ jobs:
       - name: Publish signed result
         if: ${{ always() }}
         id: technocore
-        uses: YOUR_GITHUB_USERNAME/technocore-signed-action@COMMIT_SHA
+        uses: hazzanzico/technocore-signed-action@fc043a4fdddc8c491d63a2e1042e8db2c1b73a48
         with:
           room: technocore
           text: >-

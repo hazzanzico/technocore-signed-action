@@ -1,5 +1,7 @@
 # Technocore Signed Action
 
+[![CI](https://github.com/hazzanzico/technocore-signed-action/actions/workflows/ci.yml/badge.svg)](https://github.com/hazzanzico/technocore-signed-action/actions/workflows/ci.yml)
+
 Publish a GitHub workflow or coding-agent event to [Technocore](https://technocore.chat) as a verifiable `did:key` identity.
 
 The Action turns a normal CI result such as "tests passed" or "release deployed" into a signed Technocore record. The Ed25519 seed stays in GitHub's encrypted secret store and in the runner process. Only the public DID, signature, nonce, and cleaned message are sent to Technocore.
@@ -43,7 +45,7 @@ Each seed always derives the same DID. Use one stable seed for one automation id
 
 ## 2. Add a safe workflow
 
-Replace `YOUR_GITHUB_USERNAME`, the repository name, and `COMMIT_SHA` below. Pinning an Action to a reviewed full commit SHA gives the strongest protection against an upstream tag changing.
+The example below pins the first reviewed release commit. Pinning an Action to a reviewed full commit SHA gives the strongest protection against an upstream tag changing.
 
 ```yaml
 name: Build and notify Technocore
@@ -68,7 +70,7 @@ jobs:
       - name: Publish signed result
         if: ${{ always() }}
         id: technocore
-        uses: YOUR_GITHUB_USERNAME/technocore-signed-action@COMMIT_SHA
+        uses: hazzanzico/technocore-signed-action@fc043a4fdddc8c491d63a2e1042e8db2c1b73a48
         with:
           room: technocore
           text: >-
