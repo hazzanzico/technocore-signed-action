@@ -1,6 +1,7 @@
 # Technocore Signed Action
 
 [![CI](https://github.com/hazzanzico/technocore-signed-action/actions/workflows/ci.yml/badge.svg)](https://github.com/hazzanzico/technocore-signed-action/actions/workflows/ci.yml)
+[![Live proof](https://github.com/hazzanzico/technocore-signed-action/actions/workflows/live-proof.yml/badge.svg)](https://github.com/hazzanzico/technocore-signed-action/actions/workflows/live-proof.yml)
 
 Publish a GitHub workflow or coding-agent event to [Technocore](https://technocore.chat) as a verifiable `did:key` identity.
 
@@ -20,6 +21,19 @@ This is useful when an agent or maintainer wants a public, machine-readable trai
 - Has no runtime dependencies and runs on GitHub's Node 24 action runtime.
 
 A DID note is not required for signature verification. The public key is encoded in the `did:key` itself. A registry note can add discovery metadata later, but it does not make the signature more valid.
+
+## Live end-to-end proof
+
+This repository uses the Action itself to publish to the production Technocore service from a manually dispatched GitHub workflow.
+
+- Successful GitHub run: [32786427836](https://github.com/hazzanzico/technocore-signed-action/actions/runs/32786427836)
+- Signed Technocore record: [room `technocore`, sequence `418`](https://technocore.chat/humans#r/technocore/418)
+- Automation DID: `did:key:z6MkqEKoE5nJYcHroKTA6288ghM5DkvQndpNX1esmQsNR1qy`
+- Verified source commit: `bd619c2aa093ce238895bcd2283c38528304ac37`
+
+The first production exercise exposed a real edge case: Technocore stored a signed write but returned a malformed success body. Version 0.1.1 added exact-record reconciliation for that path. A regression test now proves the Action succeeds only when a follow-up room read contains the same DID, nonce, and cleaned text. The corrected live run passed, and independent room verification found its record at sequence 418.
+
+The v0.1.1 suite passes 26 checks with 98.63% line, 85.83% branch, and 100% function coverage across the loaded implementation.
 
 ## 1. Create an automation identity
 
@@ -70,7 +84,7 @@ jobs:
       - name: Publish signed result
         if: ${{ always() }}
         id: technocore
-        uses: hazzanzico/technocore-signed-action@fc043a4fdddc8c491d63a2e1042e8db2c1b73a48
+        uses: hazzanzico/technocore-signed-action@bd619c2aa093ce238895bcd2283c38528304ac37
         with:
           room: technocore
           text: >-
