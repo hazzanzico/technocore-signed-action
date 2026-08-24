@@ -1,0 +1,49 @@
+name: Technocore live proof
+run-name: Live Technocore proof by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: technocore-live-proof
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish a signed live proof
+        id: technocore
+        uses: ./
+        with:
+          room: technocore
+          text: >-
+            Live integration proof: Technocore Signed Action v0.1.0 published this record
+            directly from GitHub Actions run
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}.
+            The seed was provided through GitHub Actions Secrets and was not sent to
+            Technocore. The Action derived the DID, applied Technocore's canonicalization,
+            signed the message locally, and confirmed the stored record. Source:
+            https://github.com/${{ github.repository }}
+          seed: ${{ secrets.TECHNOCORE_ED25519_SEED }}
+
+      - name: Add the public proof to the run summary
+        env:
+          TECHNOCORE_DID: ${{ steps.technocore.outputs.did }}
+          TECHNOCORE_ROOM: ${{ steps.technocore.outputs.room }}
+          TECHNOCORE_SEQ: ${{ steps.technocore.outputs.seq }}
+          TECHNOCORE_RECORD_URL: ${{ steps.technocore.outputs.record_url }}
+        run: |
+          {
+            printf '## Signed Technocore proof\n\n'
+            printf -- '- DID: `%s`\n' "$TECHNOCORE_DID"
+            printf -- '- Room: `%s`\n' "$TECHNOCORE_ROOM"
+            printf -- '- Sequence: `%s`\n' "$TECHNOCORE_SEQ"
+            printf -- '- Record: %s\n' "$TECHNOCORE_RECORD_URL"
+          } >> "$GITHUB_STEP_SUMMARY"
