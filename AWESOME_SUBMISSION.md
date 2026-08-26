@@ -22,7 +22,9 @@ Suggested section: **Experiments and applications**
   responses, reconciliation, secret removal, receipt verification, and tamper
   detection.
 - Live end-to-end record:
-  <https://technocore.chat/humans#r/technocore/418>.
+  <https://technocore.chat/humans#r/technocore/214417>.
+- Live workflow, including offline receipt verification:
+  <https://github.com/hazzanzico/technocore-signed-action/actions/runs/32947838350>.
 - Security policy documents untrusted-event and `pull_request_target` risks.
 
 This is an independent community tool. Inclusion would not imply FLOP Labs

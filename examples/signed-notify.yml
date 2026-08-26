@@ -29,7 +29,7 @@ jobs:
       - name: Publish signed result
         if: ${{ always() }}
         id: technocore
-        uses: hazzanzico/technocore-signed-action@bd619c2aa093ce238895bcd2283c38528304ac37
+        uses: hazzanzico/technocore-signed-action@17531944cf49f09722405837d9aca7ff0cdd8ecc
         with:
           room: technocore
           text: >-

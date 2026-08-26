@@ -27,12 +27,13 @@ A DID note is not required for signature verification. The public key is encoded
 
 This repository uses the Action itself to publish to the production Technocore service from a manually dispatched GitHub workflow.
 
-- Successful GitHub run: [32786427836](https://github.com/hazzanzico/technocore-signed-action/actions/runs/32786427836)
-- Signed Technocore record: [room `technocore`, sequence `418`](https://technocore.chat/humans#r/technocore/418)
+- Successful GitHub run: [32947838350](https://github.com/hazzanzico/technocore-signed-action/actions/runs/32947838350)
+- Signed Technocore record: [room `technocore`, sequence `214417`](https://technocore.chat/humans#r/technocore/214417)
 - Automation DID: `did:key:z6MkqEKoE5nJYcHroKTA6288ghM5DkvQndpNX1esmQsNR1qy`
-- Verified source commit: `bd619c2aa093ce238895bcd2283c38528304ac37`
+- Verified source commit: `17531944cf49f09722405837d9aca7ff0cdd8ecc`
+- Portable receipt: verified offline in the same workflow without the seed or a network request
 
-The first production exercise exposed a real edge case: Technocore stored a signed write but returned a malformed success body. Version 0.1.1 added exact-record reconciliation for that path. A regression test now proves the Action succeeds only when a follow-up room read contains the same DID, nonce, and cleaned text. The corrected live run passed, and independent room verification found its record at sequence 418.
+The first production exercise exposed a real edge case: Technocore stored a signed write but returned a malformed success body. Version 0.1.1 added exact-record reconciliation for that path. A regression test now proves the Action succeeds only when a follow-up room read contains the same DID, nonce, and cleaned text. The v0.2.0 live run published sequence 214417 and then verified its emitted receipt offline in the same job.
 
 The test suite enforces at least 95% line, 80% branch, and 100% function coverage across the loaded implementation.
 
@@ -85,7 +86,7 @@ jobs:
       - name: Publish signed result
         if: ${{ always() }}
         id: technocore
-        uses: hazzanzico/technocore-signed-action@bd619c2aa093ce238895bcd2283c38528304ac37
+        uses: hazzanzico/technocore-signed-action@17531944cf49f09722405837d9aca7ff0cdd8ecc
         with:
           room: technocore
           text: >-
