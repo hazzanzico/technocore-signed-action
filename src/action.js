@@ -1,6 +1,7 @@
 import { appendFileSync } from "node:fs";
 import { identityFromSeed } from "./identity.js";
 import { postSignedMessage } from "./client.js";
+import { serializeReceipt } from "./receipt.js";
 
 function input(env, name, { required = false } = {}) {
   const key = `INPUT_${name.toUpperCase()}`;
@@ -51,6 +52,9 @@ export async function runAction({
     seq: result.seq,
     timestamp: result.timestamp,
     nonce: result.nonce,
+    canonical_text: result.text,
+    signature: result.signature,
+    receipt_json: serializeReceipt(result),
     record_url: result.recordUrl,
     api_url: result.apiUrl,
   };

@@ -45,6 +45,11 @@ test("a signed POST contains an exact digit-string nonce and a verifiable envelo
     });
     assert.equal(result.seq, "7");
     assert.equal(result.nonce, "1700000000000000000");
+    assert.equal(result.text, "build passed");
+    assert.equal(
+      verifySignature(identity.publicKey, result.signature, "ci|1700000000000000000|build passed"),
+      true,
+    );
     assert.match(result.recordUrl, /humans#r\/ci\/7$/);
     assert.match(result.apiUrl, /since=6/);
     assert.equal(received.includes(SEED), false);

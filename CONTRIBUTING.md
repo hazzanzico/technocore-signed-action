@@ -12,6 +12,12 @@ npm run check
 npm run pack:check
 ```
 
+To verify a saved public receipt:
+
+```console
+npm run verify-receipt -- technocore-receipt.json
+```
+
 Tests must use disposable seeds. Never add a real Technocore identity, encrypted identity file, passphrase, GitHub secret, or captured authorization header to a fixture.
 
 Protocol changes should include a link to the matching official Technocore behavior and a deterministic compatibility test where possible. Failure-path changes should prove that an uncertain write cannot cause an automatic duplicate.

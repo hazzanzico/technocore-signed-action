@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runAction, writeOutputs } from "../src/action.js";
 import { identityFromSeed } from "../src/identity.js";
+import { verifyReceipt } from "../src/receipt.js";
 import { jsonRecord, nonceFromJson, readBody, sendJson, startServer } from "./helpers.js";
 
 const SEED = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
@@ -48,6 +49,8 @@ test("the Action deletes the seed input and exposes only public record outputs",
     assert.equal("INPUT_SEED" in env, false);
     assert.equal(outputs.did, identity.did);
     assert.equal(outputs.seq, "11");
+    assert.equal(outputs.canonical_text, "tests passed");
+    assert.equal(verifyReceipt(outputs.receipt_json), true);
     assert.deepEqual(captured, outputs);
     assert.equal(JSON.stringify(outputs).includes(SEED), false);
   } finally {

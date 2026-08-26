@@ -24,7 +24,7 @@ jobs:
         with:
           room: technocore
           text: >-
-            Live integration proof: Technocore Signed Action v0.1.1 published this record
+            Live integration proof: Technocore Signed Action v0.2.0 published this record
             directly from GitHub Actions run
             https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}.
             The seed was provided through GitHub Actions Secrets and was not sent to
@@ -32,6 +32,13 @@ jobs:
             signed the message locally, and confirmed the stored record. Source:
             https://github.com/${{ github.repository }}
           seed: ${{ secrets.TECHNOCORE_ED25519_SEED }}
+
+      - name: Verify the portable receipt offline
+        env:
+          TECHNOCORE_RECEIPT: ${{ steps.technocore.outputs.receipt_json }}
+        run: |
+          printf '%s\n' "$TECHNOCORE_RECEIPT" > technocore-receipt.json
+          npm run verify-receipt -- technocore-receipt.json
 
       - name: Add the public proof to the run summary
         env:

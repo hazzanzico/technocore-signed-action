@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Emit the canonical text, public signature, and a portable signed-message receipt.
+- Add dependency-free offline receipt verification and a command-line verifier.
+- Prove signed-field tampering fails while documenting that server-assigned sequence and timestamp are unsigned observations.
+- Add a maintainer-ready Awesome Technocore submission with live evidence and security boundaries.
+
 ## 0.1.1
 
 - Reconcile malformed successful write responses against the latest room records.

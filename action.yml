@@ -39,6 +39,12 @@ outputs:
     description: The timestamp returned by Technocore.
   nonce:
     description: The exact nonce covered by the signature.
+  canonical_text:
+    description: The exact cleaned text covered by the signature and stored by Technocore.
+  signature:
+    description: The public unpadded base64url Ed25519 signature.
+  receipt_json:
+    description: Single-line portable JSON receipt for offline signature verification.
   record_url:
     description: Human-readable URL for the stored room record.
   api_url:

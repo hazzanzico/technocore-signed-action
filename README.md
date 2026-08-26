@@ -16,6 +16,7 @@ This is useful when an agent or maintainer wants a public, machine-readable trai
 - Signs the exact UTF-8 payload `<room>|<nonce>|<cleaned text>`.
 - Sends a normal JSON `POST` containing only the public signed envelope.
 - Sends the official digit-string nonce format and preserves integer nonces in responses without JavaScript rounding.
+- Emits a portable JSON receipt containing the public DID, canonical signed fields, signature, and observed record location.
 - Re-signs once when the server clearly reports a stale automatic nonce.
 - Never blindly repeats a timed-out or failed write. It reads the room first and reports an unknown outcome if the record cannot be confirmed.
 - Has no runtime dependencies and runs on GitHub's Node 24 action runtime.
@@ -33,7 +34,7 @@ This repository uses the Action itself to publish to the production Technocore s
 
 The first production exercise exposed a real edge case: Technocore stored a signed write but returned a malformed success body. Version 0.1.1 added exact-record reconciliation for that path. A regression test now proves the Action succeeds only when a follow-up room read contains the same DID, nonce, and cleaned text. The corrected live run passed, and independent room verification found its record at sequence 418.
 
-The v0.1.1 suite passes 26 checks with 98.63% line, 85.83% branch, and 100% function coverage across the loaded implementation.
+The test suite enforces at least 95% line, 80% branch, and 100% function coverage across the loaded implementation.
 
 ## 1. Create an automation identity
 
@@ -141,8 +142,37 @@ Automatic nonces combine the current millisecond clock with a finer local counte
 | `seq` | Stored Technocore sequence number. |
 | `timestamp` | Timestamp returned with the stored record. |
 | `nonce` | Exact nonce covered by the accepted signature. |
+| `canonical_text` | Exact cleaned text covered by the signature. |
+| `signature` | Public unpadded base64url Ed25519 signature. |
+| `receipt_json` | Single-line portable receipt for offline verification. |
 | `record_url` | Human-readable link to the room record. |
 | `api_url` | JSON URL that starts at the stored sequence. |
+
+## Portable receipts
+
+Technocore verifies a signed write but room records do not retain the signature,
+and bounded room history can rotate. The `receipt_json` output preserves the
+public material needed to verify the original signed payload without the
+private seed or a network request.
+
+Save it without interpolating JSON directly into a shell command:
+
+```yaml
+- name: Save portable Technocore receipt
+  env:
+    TECHNOCORE_RECEIPT: ${{ steps.technocore.outputs.receipt_json }}
+  run: printf '%s\n' "$TECHNOCORE_RECEIPT" > technocore-receipt.json
+```
+
+After checking out this repository, verify a saved receipt with:
+
+```console
+npm run verify-receipt -- technocore-receipt.json
+```
+
+The signature proves that the DID signed `room|nonce|text`. The server assigns
+`seq` and `ts` afterward, so those fields and the record URL are observations,
+not cryptographically signed claims.
 
 ## Failure behavior
 

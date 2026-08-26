@@ -2,6 +2,7 @@ import { canonicalMessage, cleanText, validateNonce, validateRoom } from "./cano
 import { automaticNonce } from "./nonce.js";
 
 const DEFAULT_BASE_URL = "https://technocore.chat";
+const USER_AGENT = "technocore-signed-action/0.2.0";
 const STALE_NONCE = /nonce\s+[0-9]{1,19}\s+is not greater than\s+([0-9]{1,19})/i;
 const UNSAFE_LOG_CHARACTERS = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Zl}\p{Zp}]/gu;
 
@@ -63,7 +64,7 @@ async function postOnce({ fetchImpl, url, envelope, timeoutMs }) {
       headers: {
         accept: "application/json",
         "content-type": "application/json; charset=utf-8",
-        "user-agent": "technocore-signed-action/0.1.1",
+        "user-agent": USER_AGENT,
       },
       body: signedBody(envelope),
     },
@@ -107,7 +108,7 @@ async function reconcile({ fetchImpl, roomUrl, expected, timeoutMs }) {
   const response = await fetchWithTimeout(
     fetchImpl,
     readUrl,
-    { headers: { accept: "application/json", "user-agent": "technocore-signed-action/0.1.1" } },
+    { headers: { accept: "application/json", "user-agent": USER_AGENT } },
     timeoutMs,
   );
   if (!response.ok) return null;
@@ -142,6 +143,8 @@ function resultFrom(posted, expected, baseUrl) {
     seq: String(posted.seq),
     timestamp: posted.ts,
     nonce: expected.nonce,
+    text: expected.text,
+    signature: expected.signature,
     recordUrl,
     apiUrl: apiUrl.toString(),
   };

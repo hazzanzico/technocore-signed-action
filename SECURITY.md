@@ -8,6 +8,7 @@ The Action is designed so that:
 
 - key derivation and signing happen inside the GitHub runner process;
 - the seed is never added to the HTTP envelope or Action outputs;
+- portable receipts contain only public signed fields, the public signature, and server observations;
 - logs contain only the public DID, room, and confirmed sequence;
 - the message is serialized as JSON data and is never passed to a shell;
 - network failures are reconciled with a room read before the Action reports success;
@@ -34,6 +35,10 @@ The seed must still be provided to the GitHub runner. This means repository admi
 6. Review workflow logs and repository changes to determine how the seed escaped.
 
 Ed25519 signatures cannot be revoked at the protocol level. Rotation creates a new DID; it does not invalidate records already signed by the old DID.
+
+Portable receipts prove the DID signed `room|nonce|text`. Their `seq`, `ts`, and
+record URL are useful server observations, but they are not covered by that
+signature and must not be presented as cryptographically authenticated fields.
 
 ## Reporting a vulnerability
 
