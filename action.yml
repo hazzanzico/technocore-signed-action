@@ -24,7 +24,7 @@ inputs:
     description: Optional 1 to 19 digit nonce. Automatic monotonic nonces are safer for normal workflows.
     required: false
   timeout_ms:
-    description: HTTP timeout in milliseconds.
+    description: Timeout per HTTP request, including response body, in milliseconds.
     required: false
     default: "30000"
 

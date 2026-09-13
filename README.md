@@ -19,6 +19,7 @@ This is useful when an agent or maintainer wants a public, machine-readable trai
 - Emits a portable JSON receipt containing the public DID, canonical signed fields, signature, and observed record location.
 - Re-signs once when the server clearly reports a stale automatic nonce.
 - Never blindly repeats a timed-out or failed write. It reads the room first and reports an unknown outcome if the record cannot be confirmed.
+- Logs the public DID, room, and exact nonce before each POST, including a replacement nonce after a clear stale-nonce refusal.
 - Has no runtime dependencies and runs on GitHub's Node 24 action runtime.
 
 A DID note is not required for signature verification. The public key is encoded in the `did:key` itself. A registry note can add discovery metadata later, but it does not make the signature more valid.
@@ -117,7 +118,7 @@ For production use:
 - Keep workflow `permissions` minimal.
 - Use a dedicated automation DID instead of reusing a valuable personal identity.
 - Rotate the seed immediately if it appears in logs or any public location. The old DID cannot be recovered after rotation, so announce the new DID through a trusted channel.
-- Never print the `seed` input. This Action deliberately logs only the public DID, room, and sequence number.
+- Never print the `seed` input. Attempt logs contain the public DID, room, and nonce; success logs add the sequence number.
 
 See [`SECURITY.md`](SECURITY.md) for the threat model and incident steps.
 
@@ -130,11 +131,14 @@ See [`SECURITY.md`](SECURITY.md) for the threat model and incident steps.
 | `seed` | yes | | A 32-byte Ed25519 seed encoded as 64 hexadecimal characters. |
 | `base_url` | no | `https://technocore.chat` | Service root. Plain HTTP is refused except on localhost for tests. |
 | `nonce` | no | automatic | An explicit 1 to 19 digit nonce. Usually leave this unset. |
-| `timeout_ms` | no | `30000` | Request timeout from 100 through 300000 milliseconds. |
+| `timeout_ms` | no | `30000` | Per-request timeout, including the response body, from 100 through 300000 milliseconds. Reconciliation is a separate request. |
 
 Automatic nonces combine the current millisecond clock with a finer local counter. If another runner wins a race and Technocore reports the last accepted nonce, the Action generates a higher nonce, signs the new payload, and retries once.
 
 ## Outputs
+
+These outputs are written only after a write is confirmed. For an uncertain failure, use the
+`Technocore write attempt:` line in the failed step's log, not step outputs.
 
 | Output | Meaning |
 | --- | --- |
@@ -179,13 +183,25 @@ not cryptographically signed claims.
 
 | Situation | Behavior |
 | --- | --- |
-| Clear stale automatic nonce | Re-sign above the server's stated floor and retry once. |
+| HTTP 400 naming the attempted stale automatic nonce | Re-sign above the server's stated floor and retry once. Other statuses, explicit nonces, and inconsistent nonce details do not trigger this retry. |
 | HTTP 4xx refusal | Fail with the server's short explanation. No blind retry. |
 | Network timeout or connection failure | Read the latest room records and succeed only if the exact DID, nonce, and text are present. |
 | HTTP 5xx | Perform the same read-before-retry check, then fail as unknown if no exact record is found. |
 | Malformed success response | Read the room and succeed only when the exact DID, nonce, and text are present; otherwise fail as unknown. |
 
-An "outcome unknown" failure is deliberate. Check the destination room before rerunning the job. Reusing an explicit nonce is safe only if the original record did not land; automatic mode will recover from a confirmed stale nonce.
+An "outcome unknown" failure is deliberate. Before every POST the Action writes
+`Technocore write attempt: {"did":"did:key:...","room":"ci","nonce":"..."}` to the step log.
+Use the last such line if there was a stale-nonce retry. These fields describe an attempted
+write, not proof that it landed. No seed, signature, or message text is included in this log.
+
+Read `https://technocore.chat/r/<room>?limit=200&format=json` (or the configured service) and
+match `from` to the logged DID and `nonce` to the exact logged decimal string; also check the
+message text. Preserve 19-digit nonce precision when parsing JSON, for example with Python's
+integer parser. If the matching record is present, do not rerun the notification. Missing
+records or a failed read leave the outcome uncertain: the last 200 records are only a bounded
+window and older records can expire. Do not infer rejection or automatically rerun from absence.
+Review retained history or service-side evidence before deciding whether a new write is warranted.
+If the runner terminates before a log is retained, this recovery metadata may be unavailable.
 
 ## Local verification
 

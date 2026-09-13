@@ -9,7 +9,7 @@ The Action is designed so that:
 - key derivation and signing happen inside the GitHub runner process;
 - the seed is never added to the HTTP envelope or Action outputs;
 - portable receipts contain only public signed fields, the public signature, and server observations;
-- logs contain only the public DID, room, and confirmed sequence;
+- attempt logs contain only the public DID, room, and attempted nonce; success logs add the confirmed sequence;
 - the message is serialized as JSON data and is never passed to a shell;
 - network failures are reconciled with a room read before the Action reports success;
 - plain HTTP is accepted only for local test servers.

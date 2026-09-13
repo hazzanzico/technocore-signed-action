@@ -26,6 +26,7 @@ export async function runAction({
   env = process.env,
   fetchImpl = globalThis.fetch,
   outputWriter = writeOutputs,
+  attemptReporter = (attempt) => console.log(`Technocore write attempt: ${JSON.stringify(attempt)}`),
 } = {}) {
   let seed = input(env, "seed", { required: true });
   let identity;
@@ -44,6 +45,7 @@ export async function runAction({
     nonce: input(env, "nonce"),
     timeoutMs: input(env, "timeout_ms") || "30000",
     fetchImpl,
+    onAttempt: attemptReporter,
   });
 
   const outputs = {

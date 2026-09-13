@@ -3,7 +3,7 @@ import { automaticNonce } from "./nonce.js";
 
 const DEFAULT_BASE_URL = "https://technocore.chat";
 const USER_AGENT = "technocore-signed-action/0.2.0";
-const STALE_NONCE = /nonce\s+[0-9]{1,19}\s+is not greater than\s+([0-9]{1,19})/i;
+const STALE_NONCE = /nonce\s+([0-9]{1,19})\s+is not greater than\s+([0-9]{1,19})/i;
 const UNSAFE_LOG_CHARACTERS = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Zl}\p{Zp}]/gu;
 
 export class TechnocoreError extends Error {
@@ -49,14 +49,16 @@ async function fetchWithTimeout(fetchImpl, url, options, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetchImpl(url, { ...options, signal: controller.signal });
+    const response = await fetchImpl(url, { ...options, signal: controller.signal });
+    // The deadline must cover the body too: receiving headers does not finish a write.
+    return { ok: response.ok, status: response.status, raw: await response.text() };
   } finally {
     clearTimeout(timer);
   }
 }
 
 async function postOnce({ fetchImpl, url, envelope, timeoutMs }) {
-  const response = await fetchWithTimeout(
+  return fetchWithTimeout(
     fetchImpl,
     url,
     {
@@ -70,8 +72,17 @@ async function postOnce({ fetchImpl, url, envelope, timeoutMs }) {
     },
     timeoutMs,
   );
-  const raw = await response.text();
-  return { ok: response.ok, status: response.status, raw };
+}
+
+function matchesRecord(posted, expected) {
+  return Boolean(
+    posted &&
+    Number.isSafeInteger(posted.seq) && posted.seq > 0 &&
+    typeof posted.ts === "string" && posted.ts.length > 0 &&
+    posted.from === expected.did &&
+    String(posted.nonce) === expected.nonce &&
+    posted.text === expected.text
+  );
 }
 
 function validatePosted(raw, expected) {
@@ -85,15 +96,7 @@ function validatePosted(raw, expected) {
     });
   }
   const posted = payload?.posted;
-  if (
-    !posted ||
-    !Number.isSafeInteger(posted.seq) ||
-    posted.seq < 1 ||
-    typeof posted.ts !== "string" ||
-    posted.from !== expected.did ||
-    String(posted.nonce) !== expected.nonce ||
-    posted.text !== expected.text
-  ) {
+  if (!matchesRecord(posted, expected)) {
     throw new TechnocoreError("Technocore accepted the request but returned an unexpected record", {
       outcomeUnknown: true,
     });
@@ -112,22 +115,14 @@ async function reconcile({ fetchImpl, roomUrl, expected, timeoutMs }) {
     timeoutMs,
   );
   if (!response.ok) return null;
-  const raw = await response.text();
   let payload;
   try {
-    payload = parseJsonPreservingNonce(raw);
+    payload = parseJsonPreservingNonce(response.raw);
   } catch {
     return null;
   }
   const messages = Array.isArray(payload?.messages) ? payload.messages : [];
-  return (
-    messages.find(
-      (message) =>
-        message?.from === expected.did &&
-        String(message?.nonce) === expected.nonce &&
-        message?.text === expected.text,
-    ) ?? null
-  );
+  return messages.find((message) => matchesRecord(message, expected)) ?? null;
 }
 
 function resultFrom(posted, expected, baseUrl) {
@@ -169,6 +164,7 @@ export async function postSignedMessage({
   nonce: explicitNonce,
   timeoutMs = 30_000,
   fetchImpl = globalThis.fetch,
+  onAttempt,
 }) {
   if (!identity?.did || typeof identity.sign !== "function") {
     throw new Error("a signing identity is required");
@@ -189,6 +185,9 @@ export async function postSignedMessage({
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const envelope = prepare(identity, room, text, nonce);
+    // Publish only safe lookup fields, before every attempt (including a replacement nonce).
+    // Keep reporting outside the network catch: failure here must prevent the POST.
+    await onAttempt?.({ did: envelope.did, room: envelope.room, nonce: envelope.nonce });
     let response;
     try {
       response = await postOnce({ fetchImpl, url: roomUrl, envelope, timeoutMs: timeout });
@@ -224,8 +223,11 @@ export async function postSignedMessage({
     }
 
     const stale = response.raw.match(STALE_NONCE);
-    if (automatic && attempt === 0 && stale) {
-      nonce = automaticNonce(BigInt(stale[1]));
+    if (
+      response.status === 400 && automatic && attempt === 0 && stale &&
+      stale[1] === nonce && BigInt(stale[2]) >= BigInt(nonce)
+    ) {
+      nonce = automaticNonce(BigInt(stale[2]));
       continue;
     }
 
