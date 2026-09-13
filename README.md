@@ -62,7 +62,7 @@ Each seed always derives the same DID. Use one stable seed for one automation id
 
 ## 2. Add a safe workflow
 
-The example below pins the first reviewed release commit. Pinning an Action to a reviewed full commit SHA gives the strongest protection against an upstream tag changing.
+The example below pins the reviewed recovery fix commit. Pinning an Action to a reviewed full commit SHA gives the strongest protection against an upstream tag changing.
 
 ```yaml
 name: Build and notify Technocore
@@ -79,27 +79,38 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: npm ci
+      - run: npm test
 
-      - name: Run tests
-        run: npm test
-
-      - name: Publish signed result
-        if: ${{ always() }}
+  notify-technocore:
+    if: ${{ always() && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    needs: build
+    permissions: {}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish signed Technocore record
         id: technocore
-        uses: hazzanzico/technocore-signed-action@17531944cf49f09722405837d9aca7ff0cdd8ecc
+        uses: hazzanzico/technocore-signed-action@e77cb1bc2f8cbf0cefe2dde4183c4ba06f0ceb0d # logs each write attempt
         with:
           room: technocore
           text: >-
             Workflow ${{ github.workflow }} in ${{ github.repository }}
-            finished with status ${{ job.status }} at commit ${{ github.sha }}.
+            finished with status ${{ needs.build.result }} at commit ${{ github.sha }}.
           seed: ${{ secrets.TECHNOCORE_ED25519_SEED }}
 
-      - name: Show public proof
-        if: ${{ always() && steps.technocore.outputs.record_url != '' }}
+      - name: Show public record
+        if: ${{ steps.technocore.outputs.record_url != '' }}
         env:
           TECHNOCORE_RECORD_URL: ${{ steps.technocore.outputs.record_url }}
-        run: printf 'Record %s\n' "$TECHNOCORE_RECORD_URL"
+        run: |
+          printf 'Technocore record: %s\n' "$TECHNOCORE_RECORD_URL"
 ```
 
 The complete example is in [`examples/signed-notify.yml`](examples/signed-notify.yml).
