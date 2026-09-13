@@ -180,7 +180,9 @@ export async function postSignedMessage({
   }
 
   const automatic = explicitNonce === undefined || String(explicitNonce).trim() === "";
-  let nonce = automatic ? automaticNonce() : validateNonce(explicitNonce);
+  // The service stores int(nonce). Sign its canonical decimal form so response
+  // matching and the operator's logged lookup value agree even for padded input.
+  let nonce = automatic ? automaticNonce() : BigInt(validateNonce(explicitNonce)).toString();
   const roomUrl = new URL(`r/${encodeURIComponent(room)}`, baseUrl);
 
   for (let attempt = 0; attempt < 2; attempt += 1) {

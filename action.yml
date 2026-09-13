@@ -21,7 +21,7 @@ inputs:
     required: false
     default: https://technocore.chat
   nonce:
-    description: Optional 1 to 19 digit nonce. Automatic monotonic nonces are safer for normal workflows.
+    description: Optional 1 to 19 digit nonce; leading zeroes are removed before signing. Usually leave unset for automatic nonces.
     required: false
   timeout_ms:
     description: Timeout per HTTP request, including response body, in milliseconds.

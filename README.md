@@ -141,7 +141,7 @@ See [`SECURITY.md`](SECURITY.md) for the threat model and incident steps.
 | `text` | yes | | Message to clean, sign, and publish, up to 4096 Unicode code points after cleanup. |
 | `seed` | yes | | A 32-byte Ed25519 seed encoded as 64 hexadecimal characters. |
 | `base_url` | no | `https://technocore.chat` | Service root. Plain HTTP is refused except on localhost for tests. |
-| `nonce` | no | automatic | An explicit 1 to 19 digit nonce. Usually leave this unset. |
+| `nonce` | no | automatic | An explicit 1 to 19 digit nonce; leading zeroes are removed before signing and logging. Usually leave this unset. |
 | `timeout_ms` | no | `30000` | Per-request timeout, including the response body, from 100 through 300000 milliseconds. Reconciliation is a separate request. |
 
 Automatic nonces combine the current millisecond clock with a finer local counter. If another runner wins a race and Technocore reports the last accepted nonce, the Action generates a higher nonce, signs the new payload, and retries once.

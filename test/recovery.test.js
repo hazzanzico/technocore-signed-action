@@ -23,6 +23,23 @@ const record = (body) => ({
   seq: 12, ts: "2026-09-13T12:00:00Z",
 });
 
+test("an explicit padded nonce is normalized before logging, signing, and confirmation", async () => {
+  const attempts = [];
+  const result = await runAction({
+    env: { ...environment(), INPUT_NONCE: "0000000000000000042" },
+    attemptReporter: (attempt) => attempts.push(attempt), outputWriter: () => {},
+    fetchImpl: async (_url, options) => {
+      assert.equal(options.method, "POST", "a valid response must not require recovery");
+      const body = JSON.parse(options.body);
+      // Technocore app.py verifies the string, then store.append stores int(nonce).
+      return Response.json({ posted: { ...record(body), nonce: Number(body.nonce) } });
+    },
+  });
+  assert.equal(result.nonce, "42");
+  assert.equal(attempts[0].nonce, "42");
+  assert.equal(JSON.parse(result.receipt_json).nonce, "42");
+});
+
 for (const failure of ["network", "503", "malformed", "mismatch", "read-failure"]) {
   test(`attempt identity is reported before an unconfirmed ${failure} write`, async () => {
     resetAutomaticNonceForTests();
